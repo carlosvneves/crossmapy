@@ -1,0 +1,23 @@
+[workspace]
+members = [".", "crates/ccm-rs-py"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Carlos E. Neves"]
+license = "MIT"
+
+[workspace.dependencies]
+thiserror = "1"
+pyo3 = { version = "0.22", features = ["extension-module"] }
+
+[package]
+name = "ccm-rs"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror.workspace = true

@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "crossmapy"
+version = "0.1.0"
+description = "Python public API for CCM with Rust core backend"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/crossmapy"]

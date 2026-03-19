@@ -1,0 +1,12 @@
+[package]
+name = "ccm-rs-py"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "_ccm_rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3.workspace = true
+ccm-rs = { path = "../.." }
