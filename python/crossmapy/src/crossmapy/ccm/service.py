@@ -59,12 +59,9 @@ def _ccm_single_iteration(A, B, E, tau, acceptablelib, DesiredL, from_idx):
     Single bootstrap iteration of CCM - optimized version.
     """
     lengtht = len(A[~np.isnan(A)])
-    LibLength = lengtht
 
     Aest = np.zeros(len(A))
     rho_out = np.zeros(len(DesiredL))
-
-    B_lagged, _ = _build_lagged_array(B, E, tau)
 
     n_neighbors = E + 1
     min_weight = 0.000001
@@ -80,27 +77,21 @@ def _ccm_single_iteration(A, B, E, tau, acceptablelib, DesiredL, from_idx):
         lib_indices = np.random.choice(
             acceptablelib, size=to - from_idx + 1, replace=True
         )
-        LibUse = np.zeros(len(A), dtype=int)
-        LibUse[from_idx : to + 1] = lib_indices
 
         lib_lagged = np.zeros((to - from_idx + 1, E))
         for k in range(E):
-            lib_lagged[:, k] = B[LibUse[from_idx : to + 1] - tau * k]
+            lib_lagged[:, k] = B[lib_indices - tau * k]
 
         Aest.fill(0)
 
-        for ii, i in enumerate(acceptablelib):
+        for i in acceptablelib:
             if i < from_idx or i >= len(B):
                 continue
 
-            point_lagged = np.zeros(E)
-            for k in range(E):
-                point_lagged[k] = B[i - tau * k]
-
+            point_lagged = np.array([B[i - tau * k] for k in range(E)])
             diff = lib_lagged - point_lagged
             distances = np.sqrt(np.sum(diff**2, axis=1))
 
-            # Match C getorder: exclude self-reference (LibUse[ii] != i)
             self_mask = lib_indices == i
             distances_no_self = distances.copy()
             distances_no_self[self_mask] = np.inf
@@ -114,19 +105,14 @@ def _ccm_single_iteration(A, B, E, tau, acceptablelib, DesiredL, from_idx):
 
             if distsv != 0:
                 u = np.exp(-neighbor_dists / distsv)
-                sumu = np.sum(u)
-
-                w = u / sumu
+                w = u / np.sum(u)
                 w = np.maximum(w, min_weight)
-                sumw = np.sum(w)
-
-                w = w / sumw
+                w = w / np.sum(w)
                 Aest[i] = np.sum(A[neighbors] * w)
             else:
                 w = np.ones(n_neighbors) * min_weight
                 w[neighbor_dists == 0] = 1
-                sumw = np.sum(w)
-                w = w / sumw
+                w = w / np.sum(w)
                 Aest[i] = np.sum(A[neighbors] * w)
 
         rho_out[lidx] = _get_rho(A, Aest, acceptablelib)
@@ -188,25 +174,20 @@ def CCM_boot(A, B, E, tau=1, DesiredL=None, iterations=100):
 
     np.random.seed(42)
 
-    for it in range(iterations):
+    for _ in range(iterations):
         rho_iter, Aest_iter = _ccm_single_iteration(
             A, B, E, tau, acceptablelib, DesiredL, from_idx
         )
 
-        rho_results.append(rho_iter)   # keep full-length array (len == len(DesiredL))
+        rho_results.append(rho_iter)
         Aest_results.append(Aest_iter)
 
         for lob in (DesiredL - E + 1):
             lpos.add(lob)
 
-        if it % 10 == 0:
-            print(f"   Iteration {it + 1}/{iterations}...")
-
-    lpos = sorted(list(lpos))
-    lpos = np.array(lpos)
+    lpos = np.array(sorted(list(lpos)))
 
     rho_mat = np.full((len(DesiredL), iterations), np.nan)
-
     for itlst in range(iterations):
         rho_mat[:, itlst] = rho_results[itlst]
 
@@ -233,8 +214,8 @@ def ccmtest(CCM_boot_A, CCM_boot_B):
     """
     CCM significance test.
     """
-    FULLinfo_A = CCM_boot_A["FULLinfo"]
-    FULLinfo_B = CCM_boot_B["FULLinfo"]
+    FULLinfo_A = np.asarray(CCM_boot_A["FULLinfo"], dtype=float)
+    FULLinfo_B = np.asarray(CCM_boot_B["FULLinfo"], dtype=float)
 
     nrows_A = FULLinfo_A.shape[0]
     nrows_B = FULLinfo_B.shape[0]

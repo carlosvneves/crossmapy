@@ -2,6 +2,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum CcmError {
-    #[error("not implemented: {0}")]
-    NotImplemented(&'static str),
+    #[error("invalid input: {0}")]
+    InvalidInput(&'static str),
 }
